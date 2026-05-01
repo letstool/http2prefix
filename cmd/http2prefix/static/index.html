@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon.png">
+<title>http2prefix — IP / ASN Lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   MATERIAL DESIGN 3 — DESIGN TOKENS
+══════════════════════════════════════════════════════════════════ */
+:root {
+  --md-primary:               #9ECAFF;
+  --md-on-primary:            #003258;
+  --md-primary-container:     #00497D;
+  --md-on-primary-container:  #D1E4FF;
+  --md-secondary:             #BBC8DA;
+  --md-on-secondary:          #263141;
+  --md-secondary-container:   #3C4758;
+  --md-on-secondary-container:#D7E3F7;
+  --md-tertiary:              #4FD8E0;
+  --md-on-tertiary:           #00373D;
+  --md-tertiary-container:    #004F56;
+  --md-on-tertiary-container: #97F0F8;
+  --md-error:                 #FFB4AB;
+  --md-on-error:              #690005;
+  --md-error-container:       #93000A;
+  --md-on-error-container:    #FFDAD6;
+  --md-success:               #57D9A3;
+  --md-success-container:     #00513A;
+  --md-on-success-container:  #75F7BC;
+  --md-warning:               #FFB74D;
+  --md-warning-container:     #5A3900;
+  --md-on-warning-container:  #FFD9A0;
+  --md-background:               #111318;
+  --md-on-background:            #E2E2E6;
+  --md-surface:                  #111318;
+  --md-on-surface:               #E2E2E6;
+  --md-surface-variant:          #43474E;
+  --md-on-surface-variant:       #C3C7CF;
+  --md-surface-container-lowest: #0C0E11;
+  --md-surface-container-low:    #1A1C1E;
+  --md-surface-container:        #1E2025;
+  --md-surface-container-high:   #28292F;
+  --md-surface-container-highest:#33363F;
+  --md-outline:         #8D9199;
+  --md-outline-variant: #43474E;
+  --md-shape-xs:   4px;
+  --md-shape-sm:   8px;
+  --md-shape-md:   12px;
+  --md-shape-full: 100px;
+  --md-elev-1: 0 1px 2px rgba(0,0,0,.3),  0 1px 3px 1px rgba(0,0,0,.15);
+  --md-elev-2: 0 1px 2px rgba(0,0,0,.3),  0 2px 6px 2px rgba(0,0,0,.15);
+  --md-state-surface-hover: rgba(226,226,230,0.08);
+  --md-font:      'Roboto', sans-serif;
+  --md-font-mono: 'Roboto Mono', 'Courier New', monospace;
+}
+[data-theme="light"] {
+  --md-primary:               #0061A4;
+  --md-on-primary:            #FFFFFF;
+  --md-primary-container:     #D1E4FF;
+  --md-on-primary-container:  #001D36;
+  --md-secondary:             #535F70;
+  --md-on-secondary:          #FFFFFF;
+  --md-secondary-container:   #D7E3F7;
+  --md-on-secondary-container:#101C2B;
+  --md-tertiary:              #006A6B;
+  --md-on-tertiary:           #FFFFFF;
+  --md-tertiary-container:    #9CF1F0;
+  --md-on-tertiary-container: #002020;
+  --md-error:                 #BA1A1A;
+  --md-on-error:              #FFFFFF;
+  --md-error-container:       #FFDAD6;
+  --md-on-error-container:    #410002;
+  --md-success:               #006C4C;
+  --md-success-container:     #8AF5C7;
+  --md-on-success-container:  #002115;
+  --md-warning:               #7B5000;
+  --md-warning-container:     #FFDDB3;
+  --md-on-warning-container:  #271900;
+  --md-background:               #FAFCFF;
+  --md-on-background:            #1A1C1E;
+  --md-surface:                  #F8F9FF;
+  --md-on-surface:               #1A1C1E;
+  --md-surface-variant:          #DFE2EB;
+  --md-on-surface-variant:       #43474E;
+  --md-surface-container-lowest: #FFFFFF;
+  --md-surface-container-low:    #F1F3FA;
+  --md-surface-container:        #EBEDF4;
+  --md-surface-container-high:   #E5E7EE;
+  --md-surface-container-highest:#DFE2E8;
+  --md-outline:         #73777F;
+  --md-outline-variant: #C3C7CF;
+  --md-elev-1: 0 1px 2px rgba(0,0,0,.12), 0 1px 3px 1px rgba(0,0,0,.06);
+  --md-state-surface-hover: rgba(26,28,30,0.08);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:focus-visible { outline: 3px solid var(--md-primary); outline-offset: 2px; border-radius: var(--md-shape-xs); }
+:focus:not(:focus-visible) { outline: none; }
+
+body {
+  background: var(--md-background); color: var(--md-on-background);
+  font-family: var(--md-font); font-size: 1rem; line-height: 1.5;
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; padding: 0 16px 80px;
+  transition: background .3s, color .3s;
+}
+
+/* ── RTL ── */
+[dir="rtl"] .result-time  { margin-inline-start: auto; margin-left: 0; }
+[dir="rtl"] .lang-options { right: auto; left: 0; }
+
+/* ── APP BAR ── */
+header {
+  width: 100%; max-width: 960px;
+  padding: 16px 0; display: flex; align-items: center; gap: 16px;
+  margin-bottom: 24px;
+}
+.logo { width: 36px; height: 36px; flex-shrink: 0; }
+.header-text h1 { font-size: 1.375rem; font-weight: 400; color: var(--md-on-surface); }
+.header-text p  { font-size: .75rem; color: var(--md-on-surface-variant); letter-spacing: .025em; margin-top: 2px; }
+.header-right { margin-inline-start: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.theme-toggle {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  background: var(--md-surface-container-high); border: none;
+  border-radius: var(--md-shape-full); padding: 8px 16px 8px 12px;
+  color: var(--md-on-surface-variant);
+  transition: background .2s, color .2s; position: relative; overflow: hidden;
+}
+.theme-toggle::after { content:''; position:absolute; inset:0; border-radius:inherit; background:var(--md-state-surface-hover); opacity:0; transition:opacity .2s; }
+.theme-toggle:hover::after, .theme-toggle:focus-visible::after { opacity:1; }
+.theme-toggle:hover { color: var(--md-on-surface); }
+.theme-track { width:32px; height:16px; background:var(--md-outline); border-radius:var(--md-shape-full); position:relative; flex-shrink:0; transition:background .3s; }
+.theme-thumb { position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:var(--md-surface-container-highest); transition:transform .3s, background .3s; }
+[data-theme="light"] .theme-track { background:var(--md-primary); }
+[data-theme="light"] .theme-thumb { background:var(--md-on-primary); transform:translateX(16px); }
+.theme-label { font-family:var(--md-font); font-size:.6875rem; font-weight:500; white-space:nowrap; }
+
+/* ── Custom Language Dropdown ── */
+.lang-wrap { position: relative; }
+#lang-sel  { display: none; }
+.lang-btn {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--md-surface-container-high); border: 1px solid var(--md-outline);
+  border-radius: var(--md-shape-xs); color: var(--md-on-surface-variant);
+  font-family: var(--md-font); font-size: .875rem; padding: 8px 12px;
+  cursor: pointer; outline: none; min-height: 40px;
+  transition: border-color .2s, color .2s; position: relative; overflow: hidden; white-space: nowrap;
+}
+.lang-btn::after { content:''; position:absolute; inset:0; background:var(--md-state-surface-hover); opacity:0; transition:opacity .2s; }
+.lang-btn:hover::after, .lang-btn.open::after { opacity:1; }
+.lang-btn:hover, .lang-btn.open { border-color:var(--md-on-surface); color:var(--md-on-surface); }
+.lang-btn:focus-visible { border-color:var(--md-primary); border-width:2px; outline:none; }
+.lang-flag-icon { font-size:1.1rem; line-height:1; flex-shrink:0; }
+.lang-current-name { font-size:.8125rem; }
+.lang-chevron-icon { flex-shrink:0; color:var(--md-on-surface-variant); transition:transform .2s; }
+.lang-btn.open .lang-chevron-icon { transform:rotate(180deg); }
+.lang-options {
+  position:absolute; top:calc(100% + 4px); right:0;
+  background:var(--md-surface-container-high); border-radius:var(--md-shape-sm);
+  box-shadow:var(--md-elev-3); min-width:220px; max-height:320px; overflow-y:auto;
+  z-index:1000; padding:4px 0; list-style:none;
+  transform-origin:top right; animation:menuOpen .15s ease-out;
+}
+@keyframes menuOpen { from{opacity:0;transform:scale(.95) translateY(-4px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.lang-options::-webkit-scrollbar { width:4px; }
+.lang-options::-webkit-scrollbar-thumb { background:var(--md-outline-variant); border-radius:2px; }
+.lang-option {
+  display:flex; align-items:center; gap:12px; padding:10px 16px;
+  cursor:pointer; font-family:var(--md-font); font-size:.875rem; color:var(--md-on-surface);
+  position:relative; user-select:none;
+}
+.lang-option::after { content:''; position:absolute; inset:0; background:var(--md-on-surface); opacity:0; transition:opacity .12s; }
+.lang-option:hover::after { opacity:.08; }
+.lang-option[aria-selected="true"] { background:var(--md-primary-container); color:var(--md-on-primary-container); }
+.lang-option[aria-selected="true"]::after { display:none; }
+.lang-option .lang-flag-icon { font-size:1.15rem; }
+
+/* ── PANELS (identiques http2mac) ── */
+.panel { background: var(--md-surface-container); border: none; border-radius: var(--md-shape-md); overflow: hidden; margin-bottom: 16px; box-shadow: var(--md-elev-1); transition: background .3s; }
+.panel-head {
+  padding: 16px 24px; background: transparent; border-bottom: 1px solid var(--md-outline-variant);
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--md-font); font-size: 1rem; font-weight: 500;
+  color: var(--md-on-surface); transition: color .3s, border-color .3s;
+}
+.panel-head::before { content: ''; display: inline-block; width: 3px; height: 20px; background: var(--md-primary); border-radius: var(--md-shape-xs); flex-shrink: 0; transition: background .3s; }
+.panel-body { padding: 24px; }
+[dir="rtl"] .panel-head::before { margin-left: 0; margin-right: 10px; }
+
+/* ── QUERY INPUT ── */
+.query-row { display: flex; gap: 12px; align-items: stretch; }
+.query-input {
+  flex: 1; background: var(--md-surface-container);
+  border: 1px solid var(--md-outline-variant); border-radius: var(--md-shape-sm);
+  padding: 12px 16px; color: var(--md-on-surface);
+  font-family: var(--md-font-mono); font-size: 1rem;
+  transition: border-color .2s;
+}
+.query-input:focus { border-color: var(--md-primary); outline: none; }
+.query-input::placeholder { color: var(--md-on-surface-variant); font-family: var(--md-font); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: none; border-radius: var(--md-shape-full);
+  padding: 0 24px; font-family: var(--md-font); font-size: .875rem;
+  font-weight: 500; letter-spacing: .01em; cursor: pointer;
+  transition: background .2s, color .2s, opacity .2s; white-space: nowrap;
+}
+.btn-filled { background: var(--md-primary); color: var(--md-on-primary); height: 48px; }
+.btn-filled:hover { filter: brightness(1.1); }
+.btn-filled:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── QUERY TYPE BADGE ── */
+.query-type-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; min-height: 24px; }
+.qtype-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: .75rem; font-weight: 500; padding: 2px 10px;
+  border-radius: var(--md-shape-full);
+}
+.qtype-ip      { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+.qtype-asnum   { background: var(--md-tertiary-container); color: var(--md-on-tertiary-container); }
+.qtype-unknown { background: var(--md-surface-container-highest); color: var(--md-on-surface-variant); }
+
+/* ── RESULT ── */
+.result-wrap { margin-top: 20px; }
+.result-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px; flex-wrap: wrap;
+}
+.result-status {
+  font-size: .75rem; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: var(--md-shape-full);
+}
+.status-success  { background: var(--md-success-container); color: var(--md-on-success-container); }
+.status-notfound { background: var(--md-surface-container-highest); color: var(--md-on-surface-variant); }
+.status-error    { background: var(--md-error-container); color: var(--md-on-error-container); }
+.result-time { margin-inline-start: auto; font-size: .75rem; color: var(--md-on-surface-variant); }
+
+/* ── INFO TILES ── */
+.ip-result-grid, .as-meta-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+}
+.as-meta-grid { margin-bottom: 16px; }
+.info-tile { background: var(--md-surface-container); border-radius: var(--md-shape-sm); padding: 14px 16px; }
+.info-tile-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--md-on-surface-variant); margin-bottom: 4px; }
+.info-tile-value { font-family: var(--md-font-mono); font-size: .95rem; font-weight: 500; color: var(--md-on-surface); word-break: break-all; }
+.info-tile-value.accent { color: var(--md-primary); }
+
+/* ── PREFIX LIST ── */
+.prefix-list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.prefix-list-title { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--md-on-surface-variant); font-weight: 500; }
+.prefix-count-badge { font-size: .75rem; padding: 1px 8px; background: var(--md-primary-container); color: var(--md-on-primary-container); border-radius: var(--md-shape-full); }
+.prefix-grid {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  max-height: 280px; overflow-y: auto;
+  padding: 12px; background: var(--md-surface-container);
+  border-radius: var(--md-shape-sm);
+}
+.prefix-chip {
+  font-family: var(--md-font-mono); font-size: .8rem;
+  padding: 3px 10px; border-radius: var(--md-shape-full);
+  background: var(--md-surface-container-high); color: var(--md-on-surface);
+  border: none; cursor: default; display: inline-flex; align-items: center; gap: 5px;
+}
+.prefix-chip.v4 { border-left: 2px solid var(--md-primary); }
+.prefix-chip.v6 { border-left: 2px solid var(--md-tertiary); }
+/* Clickable variant used in as2prefix result */
+.prefix-chip.clickable {
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.prefix-chip.clickable:hover {
+  background: var(--md-primary-container); color: var(--md-on-primary-container);
+}
+.prefix-chip.clickable:hover .size-badge {
+  background: var(--md-on-primary-container); color: var(--md-primary-container);
+}
+/* Peer chip: clickable AS number pill in the peers section */
+.peer-chip {
+  font-family: var(--md-font-mono); font-size: .8rem;
+  padding: 3px 10px; border-radius: var(--md-shape-full);
+  background: var(--md-surface-container-high); color: var(--md-on-surface);
+  border-left: 2px solid var(--md-secondary); border-top: none; border-right: none; border-bottom: none;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+  transition: background .15s, color .15s;
+}
+.peer-chip:hover {
+  background: var(--md-secondary-container); color: var(--md-on-secondary-container);
+}
+/* Size badge: small pill inside a prefix chip */
+.size-badge {
+  font-family: var(--md-font); font-size: .65rem; font-weight: 500;
+  padding: 1px 5px; border-radius: var(--md-shape-full);
+  background: var(--md-surface-container-highest); color: var(--md-on-surface-variant);
+  flex-shrink: 0; transition: background .15s, color .15s; white-space: nowrap;
+}
+
+/* ── SPINNER ── */
+.spinner {
+  display: none; width: 20px; height: 20px; border-radius: 50%;
+  border: 2.5px solid var(--md-primary-container);
+  border-top-color: var(--md-primary);
+  animation: spin .7s linear infinite;
+}
+.spinner.active { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── EXAMPLES ── */
+.examples-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.example-chip {
+  font-family: var(--md-font-mono); font-size: .8rem;
+  padding: 3px 12px; border-radius: var(--md-shape-full);
+  background: var(--md-surface-container-high);
+  color: var(--md-on-surface-variant); border: none; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.example-chip:hover { background: var(--md-primary-container); color: var(--md-on-primary-container); }
+
+/* ── FOOTER ── */
+footer { margin-top: 64px; font-family: var(--md-font); font-size: .75rem; color: var(--md-on-surface-variant); letter-spacing: .03em; text-align: center; opacity: .5; }
+
+@media (max-width: 600px) {
+  .query-row { flex-direction: column; }
+  .btn-filled { height: 44px; }
+}
+</style>
+</head>
+<body>
+
+<header role="banner">
+  <svg class="logo" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="18" cy="6"  r="3.5" fill="none" stroke="var(--md-primary)" stroke-width="1.8"/>
+    <circle cx="6"  cy="28" r="3.5" fill="none" stroke="var(--md-primary)" stroke-width="1.8"/>
+    <circle cx="30" cy="28" r="3.5" fill="none" stroke="var(--md-primary)" stroke-width="1.8"/>
+    <circle cx="18" cy="18" r="4"   fill="var(--md-primary)" opacity=".9"/>
+    <line x1="18" y1="9.5"  x2="18" y2="14"  stroke="var(--md-primary)" stroke-width="1.4" opacity=".6"/>
+    <line x1="8.5" y1="26"  x2="15" y2="21"  stroke="var(--md-primary)" stroke-width="1.4" opacity=".6"/>
+    <line x1="27.5" y1="26" x2="21" y2="21"  stroke="var(--md-primary)" stroke-width="1.4" opacity=".6"/>
+  </svg>
+  <div class="header-text">
+    <h1>http2prefix</h1>
+    <p id="header-subtitle">IP address &amp; ASN lookup — BGP routing intelligence</p>
+  </div>
+  <div class="header-right">
+    <div class="lang-wrap" id="lang-dropdown-wrap">
+      <span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)" id="lang-sel-lbl">Language</span>
+      <select id="lang-sel" aria-hidden="true" tabindex="-1">
+        <option value="ar">ar</option><option value="bn">bn</option>
+        <option value="de">de</option><option value="en">en</option>
+        <option value="es">es</option><option value="fr">fr</option>
+        <option value="hi">hi</option><option value="id">id</option>
+        <option value="ja">ja</option><option value="ko">ko</option>
+        <option value="pt-BR">pt-BR</option><option value="ru">ru</option>
+        <option value="ur">ur</option><option value="vi">vi</option>
+        <option value="zh-CN">zh-CN</option>
+      </select>
+      <button class="lang-btn" id="lang-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="lang-sel-lbl">
+        <span class="lang-flag-icon" id="lang-current-flag">🇬🇧</span>
+        <span class="lang-current-name" id="lang-current-name">English</span>
+        <svg class="lang-chevron-icon" width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true">
+          <path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <ul class="lang-options" id="lang-options" role="listbox" aria-labelledby="lang-sel-lbl" hidden></ul>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" role="switch" aria-checked="false" aria-label="Toggle color theme">
+      <span class="theme-icon" id="theme-icon" aria-hidden="true">☀️</span>
+      <div class="theme-track" aria-hidden="true"><div class="theme-thumb"></div></div>
+      <span class="theme-label" id="theme-label"></span>
+    </button>
+  </div>
+</header>
+
+<main id="main-content" role="main" style="width:100%;max-width:960px">
+
+  <!-- ── Section 1 : Paramètres de la requête ── -->
+  <section class="panel" aria-labelledby="ph-params">
+    <div class="panel-head" id="ph-params" role="heading" aria-level="2"></div>
+    <div class="panel-body">
+      <div class="query-row">
+        <input class="query-input" id="query-input"
+               type="text" placeholder="1.1.1.1 or AS13335"
+               autocomplete="off" autocorrect="off" spellcheck="false"
+               aria-label="IP address or AS number">
+        <button class="btn btn-filled" id="lookup-btn">
+          <span id="btn-label">Lookup</span>
+          <span class="spinner" id="spinner"></span>
+        </button>
+      </div>
+      <div class="query-type-row"><span id="qtype-indicator"></span></div>
+      <div class="examples-row">
+        <span style="font-size:.75rem;color:var(--md-on-surface-variant);align-self:center" id="examples-label">Examples:</span>
+        <button class="example-chip" onclick="setExample('1.1.1.1')">1.1.1.1</button>
+        <button class="example-chip" onclick="setExample('8.8.8.8')">8.8.8.8</button>
+        <button class="example-chip" onclick="setExample('2606:4700::')">2606:4700::</button>
+        <button class="example-chip" onclick="setExample('AS13335')">AS13335</button>
+        <button class="example-chip" onclick="setExample('AS15169')">AS15169</button>
+        <button class="example-chip" onclick="setExample('AS3215')">AS3215</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Section 2 : Résultats ── -->
+  <section class="panel" id="results-panel" aria-labelledby="ph-results" aria-live="polite">
+    <div class="panel-head" id="ph-results" role="heading" aria-level="2"></div>
+    <div class="panel-body" id="result-wrap"></div>
+  </section>
+
+</main>
+
+<footer role="contentinfo">http2prefix · IP &amp; ASN / BGP Routing Intelligence · v1.0</footer>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════
+   i18n — 15 languages
+   ar · bn · de · en · es · fr · hi · id · ja · ko · pt-BR · ru · ur · vi · zh-CN
+══════════════════════════════════════════════════════════════════ */
+const i18n = {
+  ar: {
+    subtitle:      'البحث عن IP و ASN — ذكاء توجيه BGP',
+    placeholder:   '1.1.1.1 أو AS13335',
+    btn:           'بحث',
+    examples:      'أمثلة:',
+    qtype_ip:      '🌐 عنوان IP → بحث prefix2as',
+    qtype_asnum:   '🔢 رقم AS → بحث as2prefix',
+    qtype_unknown: '⚠ تنسيق غير معروف',
+    status_success:  'نجاح',
+    status_notfound: 'غير موجود',
+    status_error:    'خطأ',
+    lbl_ip:       'عنوان IP',
+    lbl_prefix:   'البادئة المتطابقة',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'اسم AS',
+    lbl_country:  'الدولة',
+    lbl_prefixes: 'البادئات المُعلنة',
+    lbl_peers:    'أقران BGP',
+    lbl_origins: 'الأصول',
+    panelParams: 'معاملات الاستعلام',
+    panelResults: 'النتائج',
+    lbl_theme_dark:  'داكن',
+    lbl_theme_light: 'فاتح',
+    notfound_ip: 'لم يتم العثور على بادئة BGP لعنوان IP هذا.',
+    notfound_as: 'لم يتم العثور على بادئات لرقم AS هذا.',
+    err_db:     'قاعدة البيانات لم تتم تهيئتها بعد.',
+    err_format: 'تنسيق غير صالح — أدخل عنوان IP أو رقم AS (مثال: AS13335).',
+  },
+  bn: {
+    subtitle:      'আইপি ঠিকানা ও ASN অনুসন্ধান — BGP রাউটিং তথ্য',
+    placeholder:   '1.1.1.1 বা AS13335',
+    btn:           'অনুসন্ধান',
+    examples:      'উদাহরণ:',
+    qtype_ip:      '🌐 আইপি ঠিকানা → prefix2as অনুসন্ধান',
+    qtype_asnum:   '🔢 AS নম্বর → as2prefix অনুসন্ধান',
+    qtype_unknown: '⚠ অজানা ফরম্যাট',
+    status_success:  'সফল',
+    status_notfound: 'পাওয়া যায়নি',
+    status_error:    'ত্রুটি',
+    lbl_ip:       'আইপি ঠিকানা',
+    lbl_prefix:   'মিলে যাওয়া প্রিফিক্স',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'AS নাম',
+    lbl_country:  'দেশ',
+    lbl_prefixes: 'ঘোষিত প্রিফিক্স',
+    lbl_peers:    'BGP পিয়ার',
+    lbl_origins: 'উৎস AS গুলো',
+    panelParams: 'কোয়েরি প্যারামিটার',
+    panelResults: 'ফলাফল',
+    lbl_theme_dark:  'অন্ধকার',
+    lbl_theme_light: 'আলো',
+    notfound_ip: 'এই আইপি ঠিকানার জন্য কোনো BGP প্রিফিক্স পাওয়া যায়নি।',
+    notfound_as: 'এই AS নম্বরের জন্য কোনো প্রিফিক্স পাওয়া যায়নি।',
+    err_db:     'ডেটাবেস এখনো শুরু হয়নি।',
+    err_format: 'ভুল ফরম্যাট — একটি আইপি ঠিকানা বা AS নম্বর লিখুন (যেমন AS13335)।',
+  },
+  de: {
+    subtitle:      'IP- und ASN-Suche — BGP-Routing-Intelligenz',
+    placeholder:   '1.1.1.1 oder AS13335',
+    btn:           'Suchen',
+    examples:      'Beispiele:',
+    qtype_ip:      '🌐 IP-Adresse → prefix2as-Suche',
+    qtype_asnum:   '🔢 AS-Nummer → as2prefix-Suche',
+    qtype_unknown: '⚠ Unbekanntes Format',
+    status_success:  'ERFOLG',
+    status_notfound: 'NICHT GEFUNDEN',
+    status_error:    'FEHLER',
+    lbl_ip:       'IP-Adresse',
+    lbl_prefix:   'Gefundenes Präfix',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'AS-Name',
+    lbl_country:  'Land',
+    lbl_prefixes: 'Angekündigte Präfixe',
+    lbl_peers:    'BGP-Peers',
+    lbl_origins: 'Ursprungs-AS',
+    panelParams: 'Anfrageparameter',
+    panelResults: 'Ergebnisse',
+    lbl_theme_dark:  'Dunkel',
+    lbl_theme_light: 'Hell',
+    notfound_ip: 'Kein BGP-Präfix für diese IP-Adresse gefunden.',
+    notfound_as: 'Keine Präfixe für diese AS-Nummer gefunden.',
+    err_db:     'Datenbank noch nicht initialisiert.',
+    err_format: 'Ungültiges Format — IP-Adresse oder AS-Nummer eingeben (z. B. AS13335).',
+  },
+  en: {
+    subtitle:      'IP address &amp; ASN lookup — BGP routing intelligence',
+    placeholder:   '1.1.1.1 or AS13335',
+    btn:           'Lookup',
+    examples:      'Examples:',
+    qtype_ip:      '🌐 IP address → prefix2as lookup',
+    qtype_asnum:   '🔢 AS number → as2prefix lookup',
+    qtype_unknown: '⚠ Unknown format',
+    status_success:  'SUCCESS',
+    status_notfound: 'NOT FOUND',
+    status_error:    'ERROR',
+    lbl_ip:       'IP Address',
+    lbl_prefix:   'Matched Prefix',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'AS Name',
+    lbl_country:  'Country',
+    lbl_prefixes: 'Announced Prefixes',
+    lbl_peers:    'BGP Peers',
+    lbl_origins: 'Originating AS',
+    panelParams: 'Query Parameters',
+    panelResults: 'Results',
+    lbl_theme_dark:  'Dark',
+    lbl_theme_light: 'Light',
+    notfound_ip: 'No BGP prefix found for this IP address.',
+    notfound_as: 'No prefixes found for this AS number.',
+    err_db:     'Database not yet initialised.',
+    err_format: 'Invalid format — enter an IP address or AS number (e.g. AS13335).',
+  },
+  es: {
+    subtitle:      'Búsqueda de IP y ASN — inteligencia de routing BGP',
+    placeholder:   '1.1.1.1 o AS13335',
+    btn:           'Buscar',
+    examples:      'Ejemplos:',
+    qtype_ip:      '🌐 Dirección IP → búsqueda prefix2as',
+    qtype_asnum:   '🔢 Número AS → búsqueda as2prefix',
+    qtype_unknown: '⚠ Formato desconocido',
+    status_success:  'ÉXITO',
+    status_notfound: 'NO ENCONTRADO',
+    status_error:    'ERROR',
+    lbl_ip:       'Dirección IP',
+    lbl_prefix:   'Prefijo coincidente',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'Nombre AS',
+    lbl_country:  'País',
+    lbl_prefixes: 'Prefijos anunciados',
+    lbl_peers:    'Peers BGP',
+    lbl_origins: 'AS originantes',
+    panelParams: 'Parámetros de Consulta',
+    panelResults: 'Resultados',
+    lbl_theme_dark:  'Oscuro',
+    lbl_theme_light: 'Claro',
+    notfound_ip: 'No se encontró ningún prefijo BGP para esta dirección IP.',
+    notfound_as: 'No se encontraron prefijos para este número AS.',
+    err_db:     'Base de datos aún no inicializada.',
+    err_format: 'Formato inválido — ingrese una IP o número AS (ej. AS13335).',
+  },
+  fr: {
+    subtitle:      'Lookup IP &amp; ASN — intelligence de routage BGP',
+    placeholder:   '1.1.1.1 ou AS13335',
+    btn:           'Chercher',
+    examples:      'Exemples\u00a0:',
+    qtype_ip:      '🌐 Adresse IP → lookup prefix2as',
+    qtype_asnum:   '🔢 Numéro AS → lookup as2prefix',
+    qtype_unknown: '⚠ Format inconnu',
+    status_success:  'SUCCÈS',
+    status_notfound: 'INTROUVABLE',
+    status_error:    'ERREUR',
+    lbl_ip:       'Adresse IP',
+    lbl_prefix:   'Préfixe correspondant',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'Nom AS',
+    lbl_country:  'Pays',
+    lbl_prefixes: 'Préfixes annoncés',
+    lbl_peers:    'Pairs BGP',
+    lbl_origins: 'AS origines',
+    panelParams: 'Paramètres de la requête',
+    panelResults: 'Résultats',
+    lbl_theme_dark:  'Sombre',
+    lbl_theme_light: 'Clair',
+    notfound_ip: 'Aucun préfixe BGP trouvé pour cette adresse IP.',
+    notfound_as: 'Aucun préfixe trouvé pour ce numéro AS.',
+    err_db:     'Base de données non encore initialisée.',
+    err_format: 'Format invalide — entrez une adresse IP ou un numéro AS (ex. AS13335).',
+  },
+  hi: {
+    subtitle:      'IP पता और ASN खोज — BGP रूटिंग जानकारी',
+    placeholder:   '1.1.1.1 या AS13335',
+    btn:           'खोजें',
+    examples:      'उदाहरण:',
+    qtype_ip:      '🌐 IP पता → prefix2as खोज',
+    qtype_asnum:   '🔢 AS नंबर → as2prefix खोज',
+    qtype_unknown: '⚠ अज्ञात प्रारूप',
+    status_success:  'सफल',
+    status_notfound: 'नहीं मिला',
+    status_error:    'त्रुटि',
+    lbl_ip:       'IP पता',
+    lbl_prefix:   'मिलान उपसर्ग',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'AS नाम',
+    lbl_country:  'देश',
+    lbl_prefixes: 'घोषित उपसर्ग',
+    lbl_peers:    'BGP पीयर',
+    lbl_origins: 'उत्पत्ति AS',
+    panelParams: 'क्वेरी पैरामीटर',
+    panelResults: 'परिणाम',
+    lbl_theme_dark:  'डार्क',
+    lbl_theme_light: 'लाइट',
+    notfound_ip: 'इस IP पते के लिए कोई BGP उपसर्ग नहीं मिला।',
+    notfound_as: 'इस AS नंबर के लिए कोई उपसर्ग नहीं मिला।',
+    err_db:     'डेटाबेस अभी तक प्रारंभ नहीं हुआ।',
+    err_format: 'अमान्य प्रारूप — एक IP पता या AS नंबर दर्ज करें (जैसे AS13335)।',
+  },
+  id: {
+    subtitle:      'Pencarian IP &amp; ASN — intelijen routing BGP',
+    placeholder:   '1.1.1.1 atau AS13335',
+    btn:           'Cari',
+    examples:      'Contoh:',
+    qtype_ip:      '🌐 Alamat IP → pencarian prefix2as',
+    qtype_asnum:   '🔢 Nomor AS → pencarian as2prefix',
+    qtype_unknown: '⚠ Format tidak dikenal',
+    status_success:  'BERHASIL',
+    status_notfound: 'TIDAK DITEMUKAN',
+    status_error:    'KESALAHAN',
+    lbl_ip:       'Alamat IP',
+    lbl_prefix:   'Prefix yang cocok',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'Nama AS',
+    lbl_country:  'Negara',
+    lbl_prefixes: 'Prefix yang diumumkan',
+    lbl_peers:    'Peers BGP',
+    lbl_origins: 'AS asal',
+    panelParams: 'Parameter Kueri',
+    panelResults: 'Hasil',
+    lbl_theme_dark:  'Gelap',
+    lbl_theme_light: 'Terang',
+    notfound_ip: 'Tidak ada prefix BGP ditemukan untuk alamat IP ini.',
+    notfound_as: 'Tidak ada prefix ditemukan untuk nomor AS ini.',
+    err_db:     'Database belum diinisialisasi.',
+    err_format: 'Format tidak valid — masukkan alamat IP atau nomor AS (mis. AS13335).',
+  },
+  ja: {
+    subtitle:      'IP・ASN ルックアップ — BGP ルーティング情報',
+    placeholder:   '1.1.1.1 または AS13335',
+    btn:           '検索',
+    examples:      '例：',
+    qtype_ip:      '🌐 IP アドレス → prefix2as ルックアップ',
+    qtype_asnum:   '🔢 AS 番号 → as2prefix ルックアップ',
+    qtype_unknown: '⚠ 不明な形式',
+    status_success:  '成功',
+    status_notfound: '見つかりません',
+    status_error:    'エラー',
+    lbl_ip:       'IP アドレス',
+    lbl_prefix:   'マッチしたプレフィックス',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'AS 名',
+    lbl_country:  '国',
+    lbl_prefixes: 'アナウンスされたプレフィックス',
+    lbl_peers:    'BGP ピア',
+    lbl_origins: '起点 AS',
+    panelParams: 'クエリパラメータ',
+    panelResults: '結果',
+    lbl_theme_dark:  'ダーク',
+    lbl_theme_light: 'ライト',
+    notfound_ip: 'この IP アドレスの BGP プレフィックスが見つかりませんでした。',
+    notfound_as: 'この AS 番号のプレフィックスが見つかりませんでした。',
+    err_db:     'データベースはまだ初期化されていません。',
+    err_format: '無効な形式 — IP アドレスまたは AS 番号を入力してください（例：AS13335）。',
+  },
+  ko: {
+    subtitle:      'IP 주소 &amp; ASN 조회 — BGP 라우팅 정보',
+    placeholder:   '1.1.1.1 또는 AS13335',
+    btn:           '조회',
+    examples:      '예시:',
+    qtype_ip:      '🌐 IP 주소 → prefix2as 조회',
+    qtype_asnum:   '🔢 AS 번호 → as2prefix 조회',
+    qtype_unknown: '⚠ 알 수 없는 형식',
+    status_success:  '성공',
+    status_notfound: '찾을 수 없음',
+    status_error:    '오류',
+    lbl_ip:       'IP 주소',
+    lbl_prefix:   '매칭된 프리픽스',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'AS 이름',
+    lbl_country:  '국가',
+    lbl_prefixes: '공표된 프리픽스',
+    lbl_peers:    'BGP 피어',
+    lbl_origins: '기원 AS',
+    panelParams: '쿼리 매개변수',
+    panelResults: '결과',
+    lbl_theme_dark:  '다크',
+    lbl_theme_light: '라이트',
+    notfound_ip: '이 IP 주소에 대한 BGP 프리픽스를 찾을 수 없습니다.',
+    notfound_as: '이 AS 번호에 대한 프리픽스를 찾을 수 없습니다.',
+    err_db:     '데이터베이스가 아직 초기화되지 않았습니다.',
+    err_format: '유효하지 않은 형식 — IP 주소 또는 AS 번호를 입력하세요 (예: AS13335).',
+  },
+  'pt-BR': {
+    subtitle:      'Pesquisa de IP &amp; ASN — inteligência de roteamento BGP',
+    placeholder:   '1.1.1.1 ou AS13335',
+    btn:           'Pesquisar',
+    examples:      'Exemplos:',
+    qtype_ip:      '🌐 Endereço IP → pesquisa prefix2as',
+    qtype_asnum:   '🔢 Número AS → pesquisa as2prefix',
+    qtype_unknown: '⚠ Formato desconhecido',
+    status_success:  'SUCESSO',
+    status_notfound: 'NÃO ENCONTRADO',
+    status_error:    'ERRO',
+    lbl_ip:       'Endereço IP',
+    lbl_prefix:   'Prefixo correspondente',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'Nome AS',
+    lbl_country:  'País',
+    lbl_prefixes: 'Prefixos anunciados',
+    lbl_peers:    'Peers BGP',
+    lbl_origins: 'AS originantes',
+    panelParams: 'Parâmetros da Consulta',
+    panelResults: 'Resultados',
+    lbl_theme_dark:  'Escuro',
+    lbl_theme_light: 'Claro',
+    notfound_ip: 'Nenhum prefixo BGP encontrado para este endereço IP.',
+    notfound_as: 'Nenhum prefixo encontrado para este número AS.',
+    err_db:     'Base de dados ainda não inicializada.',
+    err_format: 'Formato inválido — insira um IP ou número AS (ex. AS13335).',
+  },
+  ru: {
+    subtitle:      'Поиск IP и ASN — интеллект BGP-маршрутизации',
+    placeholder:   '1.1.1.1 или AS13335',
+    btn:           'Поиск',
+    examples:      'Примеры:',
+    qtype_ip:      '🌐 IP-адрес → поиск в prefix2as',
+    qtype_asnum:   '🔢 Номер AS → поиск в as2prefix',
+    qtype_unknown: '⚠ Неизвестный формат',
+    status_success:  'НАЙДЕНО',
+    status_notfound: 'НЕ НАЙДЕНО',
+    status_error:    'ОШИБКА',
+    lbl_ip:       'IP-адрес',
+    lbl_prefix:   'Совпавший префикс',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'Имя AS',
+    lbl_country:  'Страна',
+    lbl_prefixes: 'Объявленные префиксы',
+    lbl_peers:    'BGP-пиры',
+    lbl_origins: 'AS источники',
+    panelParams: 'Параметры запроса',
+    panelResults: 'Результаты',
+    lbl_theme_dark:  'Тёмная',
+    lbl_theme_light: 'Светлая',
+    notfound_ip: 'BGP-префикс для этого IP не найден.',
+    notfound_as: 'Префиксы для этого AS не найдены.',
+    err_db:     'База данных ещё не инициализирована.',
+    err_format: 'Неверный формат — введите IP-адрес или номер AS (например AS13335).',
+  },
+  ur: {
+    subtitle:      'IP پتہ اور ASN تلاش — BGP روٹنگ انٹیلی جنس',
+    placeholder:   '1.1.1.1 یا AS13335',
+    btn:           'تلاش',
+    examples:      'مثالیں:',
+    qtype_ip:      '🌐 IP پتہ → prefix2as تلاش',
+    qtype_asnum:   '🔢 AS نمبر → as2prefix تلاش',
+    qtype_unknown: '⚠ نامعلوم فارمیٹ',
+    status_success:  'کامیاب',
+    status_notfound: 'نہیں ملا',
+    status_error:    'خرابی',
+    lbl_ip:       'IP پتہ',
+    lbl_prefix:   'مطابق پریفکس',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'AS نام',
+    lbl_country:  'ملک',
+    lbl_prefixes: 'اعلان شدہ پریفکس',
+    lbl_peers:    'BGP پیئرز',
+    lbl_origins: 'اصل AS',
+    panelParams: 'کوئری پیرامیٹرز',
+    panelResults: 'نتائج',
+    lbl_theme_dark:  'گہرا',
+    lbl_theme_light: 'روشن',
+    notfound_ip: 'اس IP پتے کے لیے کوئی BGP پریفکس نہیں ملا۔',
+    notfound_as: 'اس AS نمبر کے لیے کوئی پریفکس نہیں ملا۔',
+    err_db:     'ڈیٹابیس ابھی تک شروع نہیں ہوئی۔',
+    err_format: 'غلط فارمیٹ — IP پتہ یا AS نمبر درج کریں (مثلاً AS13335)۔',
+  },
+  vi: {
+    subtitle:      'Tra cứu địa chỉ IP &amp; ASN — thông tin định tuyến BGP',
+    placeholder:   '1.1.1.1 hoặc AS13335',
+    btn:           'Tra cứu',
+    examples:      'Ví dụ:',
+    qtype_ip:      '🌐 Địa chỉ IP → tra cứu prefix2as',
+    qtype_asnum:   '🔢 Số AS → tra cứu as2prefix',
+    qtype_unknown: '⚠ Định dạng không xác định',
+    status_success:  'THÀNH CÔNG',
+    status_notfound: 'KHÔNG TÌM THẤY',
+    status_error:    'LỖI',
+    lbl_ip:       'Địa chỉ IP',
+    lbl_prefix:   'Tiền tố khớp',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'Tên AS',
+    lbl_country:  'Quốc gia',
+    lbl_prefixes: 'Tiền tố được công bố',
+    lbl_peers:    'Peers BGP',
+    lbl_origins: 'AS nguồn gốc',
+    panelParams: 'Tham số truy vấn',
+    panelResults: 'Kết quả',
+    lbl_theme_dark:  'Tối',
+    lbl_theme_light: 'Sáng',
+    notfound_ip: 'Không tìm thấy tiền tố BGP cho địa chỉ IP này.',
+    notfound_as: 'Không tìm thấy tiền tố nào cho số AS này.',
+    err_db:     'Cơ sở dữ liệu chưa được khởi tạo.',
+    err_format: 'Định dạng không hợp lệ — nhập địa chỉ IP hoặc số AS (ví dụ: AS13335).',
+  },
+  'zh-CN': {
+    subtitle:      'IP 与 ASN 查询 — BGP 路由情报',
+    placeholder:   '1.1.1.1 或 AS13335',
+    btn:           '查询',
+    examples:      '示例：',
+    qtype_ip:      '🌐 IP 地址 → prefix2as 查询',
+    qtype_asnum:   '🔢 AS 编号 → as2prefix 查询',
+    qtype_unknown: '⚠ 未知格式',
+    status_success:  '成功',
+    status_notfound: '未找到',
+    status_error:    '错误',
+    lbl_ip:       'IP 地址',
+    lbl_prefix:   '匹配前缀',
+    lbl_asnum:    'ASN',
+    lbl_asname:   'AS 名称',
+    lbl_country:  '国家',
+    lbl_prefixes: '宣告前缀',
+    lbl_peers:    'BGP 对等体',
+    lbl_origins: '源 AS',
+    panelParams: '查询参数',
+    panelResults: '结果',
+    lbl_theme_dark:  '深色',
+    lbl_theme_light: '浅色',
+    notfound_ip: '未找到该 IP 地址的 BGP 前缀。',
+    notfound_as: '未找到该 AS 编号的前缀。',
+    err_db:     '数据库尚未初始化。',
+    err_format: '格式无效 — 请输入 IP 地址或 AS 编号（例如 AS13335）。',
+  },
+};
+
+// ── LANG_META: flag emoji + native language name ──────────────────────────────
+const LANG_META = {
+  ar:     {flag:'🇸🇦', name:'العربية'},
+  bn:     {flag:'🇧🇩', name:'বাংলা'},
+  de:     {flag:'🇩🇪', name:'Deutsch'},
+  en:     {flag:'🇬🇧', name:'English'},
+  es:     {flag:'🇪🇸', name:'Español'},
+  fr:     {flag:'🇫🇷', name:'Français'},
+  hi:     {flag:'🇮🇳', name:'हिन्दी'},
+  id:     {flag:'🇮🇩', name:'Bahasa Indonesia'},
+  ja:     {flag:'🇯🇵', name:'日本語'},
+  ko:     {flag:'🇰🇷', name:'한국어'},
+  'pt-BR':{flag:'🇧🇷', name:'Português (BR)'},
+  ru:     {flag:'🇷🇺', name:'Русский'},
+  ur:     {flag:'🇵🇰', name:'اردو'},
+  vi:     {flag:'🇻🇳', name:'Tiếng Việt'},
+  'zh-CN':{flag:'🇨🇳', name:'中文'},
+};
+
+const RTL_LANGS = new Set(['ar', 'ur']);
+const SUPPORTED = Object.keys(LANG_META);
+
+function detectLang() {
+  for (const l of (navigator.languages || [navigator.language || 'en'])) {
+    if (SUPPORTED.includes(l)) return l;
+    const b = l.split('-')[0];
+    const m = SUPPORTED.find(s => s === b || s.startsWith(b + '-'));
+    if (m) return m;
+  }
+  return 'en';
+}
+
+// localStorage may be blocked (iframe sandbox, private browsing, etc.)
+// Wrap every access in a safe helper to avoid SecurityError crashes.
+const _ls = (() => {
+  try { localStorage.setItem('__test__', '1'); localStorage.removeItem('__test__'); return localStorage; }
+  catch (_) { return { getItem: () => null, setItem: () => {} }; }
+})();
+
+let lang     = _ls.getItem('http2prefix-lang') || detectLang();
+let darkMode = _ls.getItem('http2prefix-theme') !== null
+               ? _ls.getItem('http2prefix-theme') !== 'light'
+               : window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+function t(key) {
+  return (i18n[lang] || i18n.en)[key] || i18n.en[key] || key;
+}
+
+function applyLang() {
+  document.getElementById('header-subtitle').innerHTML  = t('subtitle');
+  document.getElementById('query-input').placeholder    = t('placeholder');
+  document.getElementById('query-input').setAttribute('aria-label', t('placeholder'));
+  document.getElementById('btn-label').textContent      = t('btn');
+  document.getElementById('examples-label').textContent = t('examples');
+  document.getElementById('ph-params').textContent      = t('panelParams');
+  document.getElementById('ph-results').textContent     = t('panelResults');
+  const dir = RTL_LANGS.has(lang) ? 'rtl' : 'ltr';
+  document.documentElement.dir  = dir;
+  document.documentElement.lang = lang;
+  document.body.dir = dir;
+  const lbl = document.getElementById('lang-sel-lbl');
+  if (lbl) lbl.textContent = dir === 'rtl' ? 'اللغة' : 'Language';
+  applyTheme(); // refresh label text in new language
+  updateQtypeIndicator();
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+  const themeBtn = document.getElementById('theme-toggle');
+  if (themeBtn) themeBtn.setAttribute('aria-checked', darkMode ? 'false' : 'true');
+  document.getElementById('theme-icon').textContent  = darkMode ? '☀️' : '🌙';
+  document.getElementById('theme-label').textContent = darkMode ? t('lbl_theme_light') : t('lbl_theme_dark');
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Query type detection (client-side)
+══════════════════════════════════════════════════════════════════ */
+function isIPv4(s) {
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(s) && s.split('.').every(n => parseInt(n,10) <= 255);
+}
+function detectQtype(q) {
+  q = q.trim();
+  if (!q) return '';
+  if (isIPv4(q) || q.includes(':')) return 'ip';
+  if (/^[Aa][Ss]\d+$/.test(q)) return 'asnum';
+  return 'unknown';
+}
+function updateQtypeIndicator() {
+  const q   = document.getElementById('query-input').value;
+  const ind = document.getElementById('qtype-indicator');
+  const qt  = detectQtype(q);
+  if (!q) { ind.innerHTML = ''; return; }
+  const cls   = 'qtype-' + (qt || 'unknown');
+  const label = qt === 'ip' ? t('qtype_ip') : qt === 'asnum' ? t('qtype_asnum') : t('qtype_unknown');
+  ind.innerHTML = `<span class="qtype-badge ${cls}">${label}</span>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Lookup
+══════════════════════════════════════════════════════════════════ */
+async function doLookup() {
+  const q = document.getElementById('query-input').value.trim();
+  if (!q) return;
+
+  const btn    = document.getElementById('lookup-btn');
+  const spn    = document.getElementById('spinner');
+  const lbl    = document.getElementById('btn-label');
+  const wrap   = document.getElementById('result-wrap');
+
+  btn.disabled = true; spn.classList.add('active'); lbl.style.display = 'none';
+  wrap.innerHTML = ''; // clear previous result
+
+  const t0 = performance.now();
+  try {
+    const resp = await fetch('/api/v1/asprefix', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({query: q})
+    });
+    renderResult(await resp.json(), Math.round(performance.now() - t0));
+  } catch(e) {
+    renderError(e.message);
+  } finally {
+    btn.disabled = false; spn.classList.remove('active'); lbl.style.display = '';
+  }
+}
+
+/* ── Rendering helpers ── */
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function tile(label, value, accent) {
+  return `<div class="info-tile">
+    <div class="info-tile-label">${esc(label)}</div>
+    <div class="info-tile-value${accent?' accent':''}">${esc(String(value))}</div>
+  </div>`;
+}
+function scls(s) { return s==='SUCCESS'?'status-success':s==='NOTFOUND'?'status-notfound':'status-error'; }
+function slbl(s) { return s==='SUCCESS'?t('status_success'):s==='NOTFOUND'?t('status_notfound'):t('status_error'); }
+
+function renderError(msg) {
+  const wrap = document.getElementById('result-wrap');
+  wrap.innerHTML = `<div class="result-header">
+    <span class="result-status status-error">${t('status_error')}</span>
+    <span style="font-size:.85rem;color:var(--md-on-surface-variant)">${esc(msg)}</span>
+  </div>`;
+}
+
+function renderResult(data, ms) {
+  const wrap = document.getElementById('result-wrap');
+  const qtBadge = data.query_type
+    ? `<span style="font-size:.75rem;padding:2px 8px;background:var(--md-surface-container-highest);border-radius:var(--md-shape-full);color:var(--md-on-surface-variant)">${esc(data.query_type)}</span>`
+    : '';
+  let h = `<div class="result-header">
+    <span class="result-status ${scls(data.status)}">${slbl(data.status)}</span>
+    ${qtBadge}
+    <span class="result-time">${ms} ms</span>
+  </div>`;
+
+  if (data.status === 'ERROR') {
+    h += `<p style="color:var(--md-on-surface-variant);font-size:.875rem">${data.query_type==='unknown'?t('err_format'):t('err_db')}</p>`;
+    wrap.innerHTML = h; return;
+  }
+  if (data.status === 'NOTFOUND') {
+    h += `<p style="color:var(--md-on-surface-variant);font-size:.875rem">${data.query_type==='ip'?t('notfound_ip'):t('notfound_as')}</p>`;
+    if (data.answer && data.query_type === 'ip' && data.answer.ip) {
+      h += `<div class="ip-result-grid" style="margin-top:12px">${tile(t('lbl_ip'), data.answer.ip, true)}${data.answer.prefix ? tile(t('lbl_prefix'), data.answer.prefix) : ''}</div>`;
+    }
+    wrap.innerHTML = h; return;
+  }
+
+  // SUCCESS
+  if (data.query_type === 'ip') {
+    const a = data.answer;
+    const origins = a.origins || [];
+    // Origins list: each ASN is clickable → triggers an AS lookup
+    const originsHTML = origins.length
+      ? origins.map(asn =>
+          `<button class="example-chip" style="cursor:pointer" onclick="setExample('AS${asn}')" title="${t('lbl_origins')}">AS${asn}</button>`
+        ).join('')
+      : `<span style="color:var(--md-on-surface-variant);font-size:.85rem">—</span>`;
+    // Prefix tile includes the size badge when available
+    const prefixTileVal = a.prefix
+      ? `${esc(a.prefix)}${a.size ? ` <span class="size-badge">${esc(a.size)}</span>` : ''}`
+      : '';
+    h += `<div class="ip-result-grid">
+      ${tile(t('lbl_ip'), a.ip, true)}
+      ${a.prefix ? `<div class="info-tile">
+        <div class="info-tile-label">${t('lbl_prefix')}</div>
+        <div class="info-tile-value" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span style="font-family:var(--md-font-mono)">${esc(a.prefix)}</span>
+          ${a.size ? `<span class="size-badge">${esc(a.size)}</span>` : ''}
+        </div>
+      </div>` : ''}
+    </div>
+    <div style="margin-top:12px">
+      <div class="prefix-list-header">
+        <span class="prefix-list-title">${t('lbl_origins')}</span>
+        <span class="prefix-count-badge">${origins.length}</span>
+      </div>
+      <div class="prefix-grid" style="max-height:80px">${originsHTML}</div>
+    </div>`;
+  } else {
+    const a = data.answer;
+    const pfxs = a.prefixes || [];
+    // Each prefix is an object {prefix, size}; clicking it looks up its network address
+    h += `<div class="as-meta-grid" style="margin-bottom:12px">
+      ${tile(t('lbl_asnum'), 'AS'+a.asnum, true)}
+    </div>
+    <div>
+      <div class="prefix-list-header">
+        <span class="prefix-list-title">${t('lbl_prefixes')}</span>
+        <span class="prefix-count-badge">${pfxs.length}</span>
+      </div>
+      <div class="prefix-grid">
+        ${pfxs.length
+          ? pfxs.map(p => {
+              const cidr   = p.prefix || p;        // handle both {prefix,size} and legacy string
+              const size   = p.size   || '';
+              const isV6   = cidr.includes(':');
+              const lookupIP = cidr.split('/')[0];  // network address for prefix2as lookup
+              return `<button class="prefix-chip ${isV6 ? 'v6' : 'v4'} clickable"
+                              onclick="setExample('${esc(lookupIP)}')"
+                              title="${esc(cidr)} — ${t('lbl_prefix')}"
+                      >${esc(cidr)}${size ? `<span class="size-badge">${esc(size)}</span>` : ''}</button>`;
+            }).join('')
+          : `<span style="color:var(--md-on-surface-variant);font-size:.85rem">${t('notfound_as')}</span>`
+        }
+      </div>
+    </div>
+    ${(a.peers && a.peers.length) ? `<div style="margin-top:12px">
+      <div class="prefix-list-header">
+        <span class="prefix-list-title">${t('lbl_peers')}</span>
+        <span class="prefix-count-badge">${a.peers.length}</span>
+      </div>
+      <div class="prefix-grid">
+        ${a.peers.map(asn =>
+            `<button class="peer-chip"
+                     onclick="setExample('AS${asn}')"
+                     title="AS${asn}">AS${asn}</button>`
+          ).join('')}
+      </div>
+    </div>` : ''}`;
+  }
+  wrap.innerHTML = h;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   Example chips / events / init
+══════════════════════════════════════════════════════════════════ */
+function setExample(v) {
+  document.getElementById('query-input').value = v;
+  updateQtypeIndicator(); doLookup();
+}
+
+document.getElementById('lookup-btn').addEventListener('click', doLookup);
+document.getElementById('query-input').addEventListener('keydown', e => { if(e.key==='Enter') doLookup(); });
+document.getElementById('query-input').addEventListener('input', updateQtypeIndicator);
+
+// ── Theme toggle ─────────────────────────────────────────────────────────────
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  darkMode = !darkMode;
+  _ls.setItem('http2prefix-theme', darkMode ? 'dark' : 'light');
+  applyTheme();
+});
+
+// ── Language dropdown (same pattern as http2mac) ──────────────────────────────
+const langSel = document.getElementById('lang-sel');
+const _lb = document.getElementById('lang-btn');
+const _lo = document.getElementById('lang-options');
+const _lf = document.getElementById('lang-current-flag');
+const _ln = document.getElementById('lang-current-name');
+
+// Build listbox items from LANG_META
+Object.entries(LANG_META).forEach(([code, meta]) => {
+  const li = document.createElement('li');
+  li.className = 'lang-option';
+  li.setAttribute('role', 'option');
+  li.setAttribute('aria-selected', 'false');
+  li.dataset.value = code;
+  li.innerHTML = `<span class="lang-flag-icon">${meta.flag}</span><span>${meta.name}</span>`;
+  li.addEventListener('click', e => { e.stopPropagation(); _pk(code); _cl(); });
+  _lo.appendChild(li);
+});
+
+// Update button + listbox to reflect current selection
+function _ud(code) {
+  const m = LANG_META[code] || LANG_META.en;
+  _lf.textContent = m.flag;
+  _ln.textContent = m.name;
+  _lo.querySelectorAll('[role=option]').forEach(o =>
+    o.setAttribute('aria-selected', o.dataset.value === code ? 'true' : 'false')
+  );
+}
+
+// Pick a language: update hidden select, sync UI, apply
+function _pk(code) {
+  lang = code;
+  langSel.value = code;
+  _ls.setItem('http2prefix-lang', code);
+  _ud(code);
+  applyLang();
+}
+
+function _op() {
+  _lo.hidden = false;
+  _lb.setAttribute('aria-expanded', 'true');
+  _lb.classList.add('open');
+  const sel = _lo.querySelector('[aria-selected="true"]');
+  if (sel) sel.scrollIntoView({block: 'nearest'});
+}
+
+function _cl() {
+  _lo.hidden = true;
+  _lb.setAttribute('aria-expanded', 'false');
+  _lb.classList.remove('open');
+}
+
+_lb.addEventListener('click', e => { e.stopPropagation(); _lo.hidden ? _op() : _cl(); });
+_lo.addEventListener('keydown', e => {
+  const items = Array.from(_lo.querySelectorAll('.lang-option'));
+  const ix = items.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown') { e.preventDefault(); items[(ix + 1) % items.length].focus(); }
+  if (e.key === 'ArrowUp')   { e.preventDefault(); items[(ix - 1 + items.length) % items.length].focus(); }
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); document.activeElement.click(); }
+  if (e.key === 'Escape') { _cl(); _lb.focus(); }
+  if (e.key === 'Tab') _cl();
+});
+_lb.addEventListener('keydown', e => {
+  if (e.key === 'Escape') _cl();
+  if ((e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') && _lo.hidden) {
+    e.preventDefault(); _op(); _lo.querySelector('.lang-option')?.focus();
+  }
+});
+document.addEventListener('click', _cl);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') _cl(); });
+
+// ── Initialise ────────────────────────────────────────────────────────────────
+// Ensure lang is in SUPPORTED list
+if (!SUPPORTED.includes(lang)) lang = 'en';
+langSel.value = lang;
+_ud(lang);
+applyLang();
+applyTheme();
+</script>
+</body>
+</html>

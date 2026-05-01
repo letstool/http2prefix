@@ -1,0 +1,6 @@
+.git
+out/
+db/
+*.mmdb
+.last_update
+docs/screenshot.png

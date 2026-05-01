@@ -1,0 +1,317 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "http2prefix — IP Address & ASN Lookup API",
+    "description": "Resolves IP addresses to BGP AS numbers (prefix2as) and AS numbers to announced IP prefixes (as2prefix).\n\nTwo MMDB databases are built automatically from gzipped CSVs fetched from the letstool CDN and refreshed once per day at noon (local time):\n- **prefix2as** — `https://cdn.letstool.net/prefix2as/csv` (`prefix,origins` — origins is space-separated ASNs) (`prefix,origins` — origins is space-separated ASNs)\n- **as2prefix** — `https://cdn.letstool.net/as2prefix/csv` (`asn,prefixes,peers,upstreams,downstreams` — values are space-separated; peers/upstreams/downstreams are merged into a single sorted peer list) (`asn,prefixes` — prefixes is space-separated CIDRs)\n\nThe produced MMDBs use the **same format as db2prefix** and are fully interchangeable with it.\n\nA single endpoint (`POST /api/v1/asprefix`) auto-detects the query type:\n- **IP address** (IPv4 or IPv6) → queries the `prefix2as` database\n- **AS number** (e.g. `AS13335`, case-insensitive) → queries the `as2prefix` database\n",
+    "version": "1.0.0",
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local server"
+    }
+  ],
+  "paths": {
+    "/api/v1/asprefix": {
+      "post": {
+        "summary": "Look up an IP address or AS number",
+        "description": "Accepts a **single query** containing either an IP address or an AS number.\n\n**Query type detection:**\n- If the query is a valid IPv4 or IPv6 address → routes to the `prefix2as` database.\n- If the query matches `AS<number>` (case-insensitive) → routes to the `as2prefix` database.\n",
+        "operationId": "lookup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LookupRequest"
+              },
+              "examples": {
+                "ipv4": {
+                  "summary": "IPv4 address lookup",
+                  "value": {
+                    "query": "1.1.1.1"
+                  }
+                },
+                "ipv6": {
+                  "summary": "IPv6 address lookup",
+                  "value": {
+                    "query": "2606:4700::"
+                  }
+                },
+                "asnum_upper": {
+                  "summary": "AS number (uppercase)",
+                  "value": {
+                    "query": "AS13335"
+                  }
+                },
+                "asnum_lower": {
+                  "summary": "AS number (lowercase)",
+                  "value": {
+                    "query": "as13335"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Lookup result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupResponse"
+                }
+              }
+            }
+          },
+          "405": {
+            "description": "Method not allowed — only POST is accepted"
+          }
+        }
+      }
+    },
+    "/db/prefix2as": {
+      "get": {
+        "summary": "Download the current prefix2as.mmdb database file",
+        "description": "Serves the current `prefix2as.mmdb` binary for peer instances.",
+        "operationId": "getPrefix2asDB",
+        "responses": {
+          "200": {
+            "description": "prefix2as.mmdb binary file",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database not yet built"
+          }
+        }
+      }
+    },
+    "/db/as2prefix": {
+      "get": {
+        "summary": "Download the current as2prefix.mmdb database file",
+        "description": "Serves the current `as2prefix.mmdb` binary for peer instances.",
+        "operationId": "getAs2prefixDB",
+        "responses": {
+          "200": {
+            "description": "as2prefix.mmdb binary file",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Database not yet built"
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "summary": "OpenAPI 3.1 specification (JSON format)",
+        "operationId": "getOpenAPI",
+        "responses": {
+          "200": {
+            "description": "OpenAPI JSON document",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Embedded interactive web UI",
+        "description": "Browser-based interface for IP and AS number lookup. Supports dark/light themes and 9 languages with RTL support.",
+        "operationId": "getUI",
+        "responses": {
+          "200": {
+            "description": "HTML web UI",
+            "content": {
+              "text/html": {}
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LookupRequest": {
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "IP address (IPv4 or IPv6) or AS number in the format `AS<number>` (case-insensitive). Examples: `\"1.1.1.1\"`, `\"2606:4700::\"`, `\"AS13335\"`, `\"as15169\"`.",
+            "example": "1.1.1.1"
+          }
+        }
+      },
+      "LookupResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "query_type",
+          "query"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "NOTFOUND",
+              "ERROR"
+            ],
+            "description": "SUCCESS: matched a record. NOTFOUND: valid query but no record. ERROR: malformed or DB not ready."
+          },
+          "query_type": {
+            "type": "string",
+            "enum": [
+              "ip",
+              "asnum",
+              "unknown"
+            ],
+            "description": "Detected query type. 'ip' for IP queries, 'asnum' for AS number queries."
+          },
+          "query": {
+            "type": "string",
+            "description": "The original query string."
+          },
+          "answer": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/IPAnswer"
+              },
+              {
+                "$ref": "#/components/schemas/ASAnswer"
+              }
+            ],
+            "description": "Present on SUCCESS and NOTFOUND. Schema depends on query_type."
+          }
+        }
+      },
+      "IPAnswer": {
+        "type": "object",
+        "description": "Answer for an IP address query (prefix2as lookup). A prefix may be originated by multiple ASes (MOAS — Multiple Origin AS).",
+        "required": [
+          "ip"
+        ],
+        "properties": {
+          "ip": {
+            "type": "string",
+            "description": "Queried IP address in canonical form.",
+            "example": "1.1.1.1"
+          },
+          "prefix": {
+            "type": "string",
+            "description": "The matched BGP prefix.",
+            "example": "1.1.1.0/24"
+          },
+          "origins": {
+            "type": "array",
+            "description": "AS numbers originating this prefix. More than one entry indicates a MOAS (Multiple Origin AS) prefix.",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": [
+              13335
+            ]
+          },
+          "size": {
+            "type": "string",
+            "description": "Number of IP addresses in the matched prefix. Decimal for IPv4, power-of-two notation for IPv6.",
+            "example": "256"
+          }
+        }
+      },
+      "ASAnswer": {
+        "type": "object",
+        "description": "Answer for an AS number query (as2prefix lookup). Prefixes are sorted: IPv4 ascending by network address, then IPv6 ascending by network address. Peers is the merged, deduplicated, ascending-sorted union of all BGP neighbours (peers, upstreams, and downstreams as classified by db2prefix).",
+        "required": [
+          "asnum",
+          "prefixes"
+        ],
+        "properties": {
+          "asnum": {
+            "type": "integer",
+            "format": "int64",
+            "description": "The AS number.",
+            "example": 13335
+          },
+          "prefixes": {
+            "type": "array",
+            "description": "All BGP prefixes announced by this AS, each with its address count. Sorted: IPv4 ascending by network address, then IPv6 ascending.",
+            "items": {
+              "$ref": "#/components/schemas/PrefixInfo"
+            },
+            "example": [
+              {
+                "prefix": "1.0.0.0/24",
+                "size": "256"
+              },
+              {
+                "prefix": "1.1.1.0/24",
+                "size": "256"
+              },
+              {
+                "prefix": "2606:4700::/32",
+                "size": "2^96"
+              }
+            ]
+          },
+          "peers": {
+            "type": "array",
+            "description": "Merged, deduplicated, ascending-sorted union of all BGP neighbours (peers + upstreams + downstreams as classified by db2prefix). Absent if the AS has no known BGP neighbours.",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "example": [
+              174,
+              3356,
+              6939
+            ]
+          }
+        }
+      },
+      "PrefixInfo": {
+        "type": "object",
+        "description": "A BGP prefix with its address count.",
+        "required": [
+          "prefix",
+          "size"
+        ],
+        "properties": {
+          "prefix": {
+            "type": "string",
+            "description": "The CIDR prefix string.",
+            "example": "1.1.1.0/24"
+          },
+          "size": {
+            "type": "string",
+            "description": "Number of IP addresses in this prefix. Decimal for IPv4 (e.g. \"256\"), power-of-two notation for IPv6 (e.g. \"2^96\").",
+            "example": "256"
+          }
+        }
+      }
+    }
+  }
+}
