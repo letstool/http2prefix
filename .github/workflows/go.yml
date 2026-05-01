@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Build (${{ matrix.goos }}/${{ matrix.goarch }})
@@ -39,14 +42,14 @@ jobs:
 
           - goos: darwin
             goarch: amd64
-            runner: prefixos-latest
+            runner: macos-latest
             artifact: http2prefix-darwin-amd64
             binary: http2prefix
             static: false
 
           - goos: darwin
             goarch: arm64
-            runner: prefixos-latest
+            runner: macos-latest
             artifact: http2prefix-darwin-arm64
             binary: http2prefix
             static: false
