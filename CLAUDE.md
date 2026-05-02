@@ -48,7 +48,7 @@ and refreshed once per day at **noon (UTC time)**. An optional `LICENSE_KEY` ena
 │   └── windows_run.cmd           # Run binary on Windows
 ├── go.mod
 ├── go.sum
-├── LICENSE                       # MIT
+├── LICENSE                       # Apache 2.0
 ├── README.md
 └── CLAUDE.md                     # This file
 ```

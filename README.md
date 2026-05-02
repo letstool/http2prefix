@@ -1,6 +1,9 @@
 # http2prefix
 
-> **BGP-over-HTTP** — A lightweight HTTP gateway that exposes Internet BGP routing database as a JSON REST API.
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Docker Pulls](https://img.shields.io/docker/pulls/letstool/http2prefix)](https://hub.docker.com/r/letstool/http2prefix)
+
+> **BGP-over-HTTP** — Fast & lightweight HTTP gateway that serves Internet BGP routing database as a JSON REST API.
 
 Given an IP address or an AS number, **http2prefix** returns the matching BGP prefix with its originating ASes, or the full list of prefixes announced by an AS — served from two in-memory MMDB databases that are refreshed automatically from a CDN.
 
@@ -14,6 +17,12 @@ Given an IP address or an AS number, **http2prefix** returns the matching BGP pr
 
 ---
 
+## Releases
+
+Provided binaries are fully functional natively on Linux (amd64 or arm64), Windows (amd64), macOS (amd64 or arm64), and also via Docker (amd64 or arm64), with no additional dependencies required. For download and installation, please refer to the [Releases](https://github.com/letstool/http2prefix/releases) page.
+
+---
+
 ## Disclaimer
 
 This project is released **as-is**, for demonstration or reference purposes.
@@ -23,10 +32,10 @@ It is **not maintained**: no bug fixes, dependency updates, or new features are 
 
 ## License
 
-This project is licensed under the **MIT License** — see the [`LICENSE`](LICENSE) file for details.
+This project is licensed under the **Apache License, Version 2.0** — see the [`LICENSE`](LICENSE) file for details.
 
 ```
-MIT License — Copyright (c) 2026 letstool.net
+Copyright (c) 2026 letstool.net
 ```
 
 ---
@@ -505,16 +514,16 @@ BGP routing data sourced from public routing tables via the letstool CDN. This p
 
 ---
 
-# See also
+## See also 
 
-| Projet | GitHub | Docker Hub | Description |
+| Project | GitHub | Docker Hub | Description |
 |---|---|---|---|
-| `http2tor` | [letstool/http2tor](https://github.com/letstool/http2tor) | [letstool/http2tor](https://hub.docker.com/r/letstool/http2tor) | Lightweight HTTP gateway exposing Tor network detection as a JSON REST API |
-| `http2geoip` | [letstool/http2geoip](https://github.com/letstool/http2geoip) | [letstool/http2geoip](https://hub.docker.com/r/letstool/http2geoip) | Lightweight stateless HTTP gateway exposing IP geolocation as a JSON REST API |
-| `http2cert` | [letstool/http2cert](https://github.com/letstool/http2cert) | [letstool/http2cert](https://hub.docker.com/r/letstool/http2cert) | Lightweight stateless HTTP gateway exposing X.509 certificate inspection as a JSON REST API |
-| `http2dns` | [letstool/http2dns](https://github.com/letstool/http2dns) | [letstool/http2dns](https://hub.docker.com/r/letstool/http2dns) | Lightweight stateless HTTP gateway exposing DNS queries as a JSON REST API |
-| `http2whois` | [letstool/http2whois](https://github.com/letstool/http2whois) | [letstool/http2whois](https://hub.docker.com/r/letstool/http2whois) | Lightweight stateless HTTP gateway exposing WHOIS queries as a JSON REST API |
-| `http2sun` | [letstool/http2sun](https://github.com/letstool/http2sun) | [letstool/http2sun](https://hub.docker.com/r/letstool/http2sun) | Lightweight stateless HTTP gateway exposing solar position data as a JSON REST API |
-| `http2mac` | [letstool/http2mac](https://github.com/letstool/http2mac) | [letstool/http2mac](https://hub.docker.com/r/letstool/http2mac) | Lightweight HTTP gateway exposing MAC address OUI database as a JSON REST API |
-| `http2country` | [letstool/http2country](https://github.com/letstool/http2country) | [letstool/http2country](https://hub.docker.com/r/letstool/http2country) | Lightweight HTTP gateway exposing country intelligence data as a JSON REST API |
-| `http2prefix` | [letstool/http2prefix](https://github.com/letstool/http2prefix) | [letstool/http2prefix](https://hub.docker.com/r/letstool/http2prefix) | Lightweight HTTP gateway that exposes Internet BGP routing database as a JSON REST API |
+| `http2dns` | [letstool/http2dns](https://github.com/letstool/http2dns) | [letstool/http2dns](https://hub.docker.com/r/letstool/http2dns) | Fast & lightweight HTTP gateway that serves DNS queries as a JSON REST API |
+| `http2whois` | [letstool/http2whois](https://github.com/letstool/http2whois) | [letstool/http2whois](https://hub.docker.com/r/letstool/http2whois) | Fast & lightweight HTTP gateway that serves WHOIS queries as a JSON REST API |
+| `http2geoip` | [letstool/http2geoip](https://github.com/letstool/http2geoip) | [letstool/http2geoip](https://hub.docker.com/r/letstool/http2geoip) | Fast & lightweight HTTP gateway that serves IP geolocation database as a JSON REST API |
+| `http2cert` | [letstool/http2cert](https://github.com/letstool/http2cert) | [letstool/http2cert](https://hub.docker.com/r/letstool/http2cert) | Fast & lightweight HTTP gateway that serves X.509 certificate inspection as a JSON REST API |
+| `http2tor` | [letstool/http2tor](https://github.com/letstool/http2tor) | [letstool/http2tor](https://hub.docker.com/r/letstool/http2tor) | Fast & lightweight HTTP gateway that serves Tor IP database as a JSON REST API |
+| `http2sun` | [letstool/http2sun](https://github.com/letstool/http2sun) | [letstool/http2sun](https://hub.docker.com/r/letstool/http2sun) | Fast & lightweight HTTP gateway that serves solar position algorithm as a JSON REST API |
+| `http2mac` | [letstool/http2mac](https://github.com/letstool/http2mac) | [letstool/http2mac](https://hub.docker.com/r/letstool/http2mac) | Fast & lightweight HTTP gateway that serves MAC address OUI database as a JSON REST API |
+| `http2country` | [letstool/http2country](https://github.com/letstool/http2country) | [letstool/http2country](https://hub.docker.com/r/letstool/http2country) | Fast & lightweight HTTP gateway that serves country database as a JSON REST API |
+| `http2prefix` | [letstool/http2prefix](https://github.com/letstool/http2prefix) | [letstool/http2prefix](https://hub.docker.com/r/letstool/http2prefix) | Fast & lightweight HTTP gateway that serves Internet BGP routing database as a JSON REST API |
